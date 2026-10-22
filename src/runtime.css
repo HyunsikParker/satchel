@@ -71,7 +71,7 @@
 .sat .sat-secondary { background: transparent; color: var(--sat-ink); border-color: var(--sat-line); }
 .sat-link { background: none; border: 0; padding: 8px 0; text-decoration: underline; cursor: pointer; color: var(--sat-muted); font-size: 0.85em; }
 .sat-feedback:empty { display: none; }
-.sat-feedback { border-radius: 12px; padding: 12px 14px; margin: 12px 0 0; border: 2px solid var(--sat-line); }
+.sat-feedback { border-radius: 12px; padding: 12px 14px; margin: 4px 0 12px; border: 2px solid var(--sat-line); }
 .sat-feedback p { margin: 0 0 6px; }
 .sat-feedback p:last-child { margin-bottom: 0; }
 .sat-feedback.is-right { border-color: var(--sat-right); background: var(--sat-right-bg); }

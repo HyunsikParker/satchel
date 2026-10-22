@@ -193,6 +193,7 @@
         ]);
       }
       form.appendChild(field);
+      form.appendChild(feedback); // the result sits between the answer and the button that moves on
       var buttons = el('div', { className: 'sat-actions' });
       if (!state.checked) {
         buttons.appendChild(el('button', { type: 'submit', className: 'sat-primary', text: 'Check' }));
@@ -225,6 +226,7 @@
         state.results[q.id] = right ? 'right' : 'wrong';
         save();
         render(false);
+        announce((right ? 'Right. ' : 'Not this time. The answer is: ' + rightAnswer(q) + '. ') + (q.why || ''));
         var next = root.querySelector('.sat-next');
         if (next) next.focus();
       });
@@ -240,7 +242,7 @@
         if (q.kind === 'choice') for (var j = 0; j < q.options.length; j++) text += '. Option ' + (j + 1) + ': ' + q.options[j].text;
         speak(text);
       } }));
-      return [progress, meter, heading, hint, form, feedback].concat(tools.length ? [el('div', { className: 'sat-under' }, tools)] : []);
+      return [progress, meter, heading, hint, form].concat(tools.length ? [el('div', { className: 'sat-under' }, tools)] : []);
     }
 
     function endScreen() {
