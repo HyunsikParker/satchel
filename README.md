@@ -4,7 +4,11 @@
 small HTML file that opens on any phone or computer with no internet, no app and no login, with large text, high contrast,
 read-aloud and no timer.
 
-Live demo: https://hyunsikparker.github.io/satchel/
+Live demo: https://hyunsikparker.github.io/satchel/ · Video walkthrough (1 min 3 s, captions):
+https://hyunsikparker.github.io/satchel/demo.html
+
+The video is recorded from the live page by `scripts/demo.mjs` (Playwright), which checks the numbers the narration
+quotes against the page as it records. The narration is a synthetic voice (Qwen3-TTS, run locally).
 
 ## The barrier
 
