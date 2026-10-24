@@ -1,8 +1,8 @@
 # Satchel
 
-**Pack a practice set that works without internet.** Write questions once in plain text; Satchel turns them into one
-small HTML file that opens on any phone or computer with no internet, no app and no login, with large text, high contrast,
-read-aloud and no timer.
+**Pack a practice set that works without internet.** Write questions in plain text, try them in the student preview,
+and download one HTML file. Students can answer at their own pace, with hints, feedback, larger text and high contrast.
+No account or app to install.
 
 Live demo: https://hyunsikparker.github.io/satchel/ · Video walkthrough (1 min 3 s, captions):
 https://hyunsikparker.github.io/satchel/demo.html
@@ -12,14 +12,10 @@ quotes against the page as it records. The narration is a synthetic voice (Qwen3
 
 ## The barrier
 
-Most online practice tools assume a steady connection, a recent device and an account. About 2.2 billion people are still
-offline, and 96% of them live in low- and middle-income countries
-([ITU, November 2025](https://www.itu.int/en/mediacentre/Pages/PR-2025-11-17-Facts-and-Figures.aspx)). Many more have a
-connection only at school or only when they can pay for data, share one phone with their family, or use an old phone that
-struggles with heavy web apps. Quiz platforms also bring timers, small tap targets and drag-and-drop questions that are
-hard to use with a screen reader, a keyboard or low vision.
-
-A teacher who wants to send practice home usually ends up photographing a worksheet.
+Satchel is designed for a student who can download work at school but has no reliable connection at home. ITU estimated
+that 2.2 billion people remained offline in 2025, with 96% in low- and middle-income countries
+([ITU, November 2025](https://www.itu.int/en/mediacentre/Pages/PR-2025-11-17-Facts-and-Figures.aspx)). Satchel keeps a small
+practice set usable after it reaches the learner. It does not provide a device or the initial file transfer.
 
 ## What it does
 
@@ -27,8 +23,8 @@ A teacher who wants to send practice home usually ends up photographing a worksh
    with `Answer:`. Hints and explanations are optional. Satchel shows how many questions are ready and explains, in plain
    words, any line it could not read ("Question 2 has no right answer marked. Put * after the right option.").
 2. **Try it as a student** in the live preview, which runs the same code as the packed file.
-3. **Pack it.** *Download the offline file* saves one HTML file of about 20-30 KB with the questions, the code and the
-   styles inside it. Send it by message, Bluetooth, email or USB; it opens from the downloads folder in any browser and
+3. **Pack it.** *Download the offline file* saves one self-contained HTML file with the questions, the code and the
+   styles inside it. Send it by message, Bluetooth, email or USB; it opens from the downloads folder in a browser and
    needs no data after that. *Print a paper copy* prints a worksheet with an answer key on a separate page.
 
 For the student, the file offers:
@@ -38,45 +34,56 @@ For the student, the file offers:
   match), plus any other accepted answers the teacher lists;
 - a hint on request, the right answer and the explanation after each check, and at the end the questions they missed,
   with *Practise the ones I missed*;
-- larger text and high contrast, remembered on the device; read-aloud with the device's own voices when it has them;
+- saved progress, including an unfinished answer, when the browser allows local storage. Reopen the same file in the same
+  browser and choose *Continue at question…*. On a shared device, *Start again* clears the previous attempt;
+- larger text and high contrast, without losing the current answer; read-aloud when a local English voice is available;
 - a version that still works when scripts are blocked: every question with the answer behind *Show the answer*.
+
+Conflicting answers, missing keys and unreadable lines block download and print until corrected, so a broken question
+cannot silently disappear from the set. The two downloaded files in the browser tests are about 27–29 KB; size grows
+with the questions.
 
 ## Why practice questions
 
-Answering questions with feedback, then going back to the ones you missed, is one of the two study methods rated most
-useful in a review of ten common techniques
+Practice testing received a high utility rating in a review of ten learning techniques
 ([Dunlosky et al., 2013](https://www.psychologicalscience.org/news/releases/which-study-strategies-make-the-grade.html)).
-Satchel does not change what is taught; it gets that kind of practice to students who cannot use the usual online tools.
+Satchel supports that activity with questions and feedback. We have not measured learning outcomes with students.
 
-## Privacy and safety
+## Privacy and storage
 
-- The Satchel page has no server and no analytics, and its Content Security Policy blocks every network request
-  (`connect-src 'none'`). Questions are kept in the browser's local storage so they survive a reload.
-- The packed file carries its own policy, `default-src 'none'`, so it cannot load or send anything either. It stores only
-  the student's reading settings and answers on their own device.
-- Text from the questions is always inserted as text, never as HTML, so a question cannot inject code into the page.
-- The examples are general knowledge written for Satchel. No learner data is used.
+The editor processes questions locally, with no analytics or upload service. Its `connect-src 'none'` policy blocks
+fetch and similar connections. The offline file uses `default-src 'none'` with only its inline code, styles and data
+images permitted. The player makes no network requests. Question text is escaped in the file and inserted with
+`textContent`, never treated as user-supplied HTML. Examples are general knowledge; no learner records are used.
+
+Editor drafts, settings and practice progress are stored in the browser. Local-file storage varies by browser.
+Private browsing, clearing storage, moving a file or changing browsers may prevent continuation. If saving fails during
+practice, the player tells the learner to keep the file open to finish. Version 1 settings are retained when encountered,
+but its incomplete progress format cannot be resumed. Previously downloaded files keep their original behaviour.
 
 ## How it was checked
 
-- 14 unit tests (`npm test`): the question format (the three examples, other ways of marking answers, questions that run
-  onto two lines, unreadable lines and missing answers reported), the answer checker (numbers in different forms,
-  capitals and spaces, near misses rejected), the practice flow in a simulated browser (one question at a time, feedback,
-  focus moving to the question and then to *Next*, practising missed questions, settings remembered, question text never
-  treated as HTML) and the packed file (self-contained, readable without scripts, escaping, size under 60 KB).
-- 3 browser tests (`npm run test:e2e`, Playwright on the production build): writing and editing questions with the
-  preview by keyboard, packing and downloading the file, then opening that file **with the network switched off** and
-  answering by keyboard, switching to high contrast, and opening it again **with JavaScript disabled**; axe accessibility
-  scans with no violations on the page and on the packed file; no console errors; no network requests; phone width.
-- The runtime is written in ES5 so it runs in old phone browsers; `esbuild --target=es5` accepts it without errors.
+`npm run check` passes 32 unit tests, the production build and 5 Chrome browser tests.
+
+- Parsing: all examples, alternate notation, unreadable lines, missing answers, conflicting keys and option letters out of order.
+- Grading: equivalent numbers, decimal place value, tiny values, unsafe integer rounding and negative mixed numbers.
+- Practice: hints and reading controls preserve answers; keyboard focus stays on the reading control; reopening restores
+  progress; restart clears an attempt; corrupt or blocked storage degrades safely.
+- Download: an actual file opened offline, closed and reopened with its draft restored, completed and retried. A separate
+  check opens a downloaded file with JavaScript disabled and reveals its answers.
+- Accessibility: no axe violations in the tested editor and player states; keyboard interactions; no horizontal overflow
+  at 375px with larger text and high contrast. Phone and desktop screenshots were inspected.
+- Security and size: escaping checks, no external requests from the offline player, and sample files below 60 KB.
+
+The player passes `esbuild --target=es5`. This verifies syntax, not support for every browser. Current Chrome is the tested
+browser; physical old phones and screen-reader software remain untested.
 
 ## Run it locally
 
 ```bash
 npm install
 npm run dev        # http://127.0.0.1:5173
-npm test           # unit tests
-npm run test:e2e   # browser tests on the production build
+npm run check      # unit tests, build and browser tests
 ```
 
 ## Code map
@@ -91,13 +98,17 @@ npm run test:e2e   # browser tests on the production build
 - One question type at a time: multiple choice (one right answer) or a short typed answer. No images, audio or maths
   notation yet.
 - Results stay on the student's device; there is no class dashboard, by design, since the file has no way to send them.
-- Read-aloud depends on the voices installed on the device.
+- Read-aloud requires a local English voice.
+- Number comparison is limited to JavaScript's safe numeric range; larger values require matching written answers.
+  This is a short-answer checker, not a symbolic maths engine.
+- Local progress is for one learner at a time; it is not a secure assessment record.
 
 ## Credits and disclosure
 
 - Built during AccessED Hacks 2026 (started October 22, 2026). No pre-existing project code.
-- **AI assistance:** built with Claude (Anthropic), an AI coding assistant, which wrote the code, the tests and this
-  README.
+- **AI assistance:** Claude (Anthropic) generated the initial implementation, tests and documentation. Codex (OpenAI)
+  assisted with the October 24 grading, answer preservation, resume, validation, tests and documentation improvements.
+- The 1 minute 3 second video shows the October 22 version. Current resume and validation features are in the live app.
 - Libraries: React, Vite and TypeScript for the teacher's page; Vitest, Testing Library, Playwright and axe-core for
   tests. The packed file uses no libraries.
 

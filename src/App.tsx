@@ -43,7 +43,7 @@ export default function App() {
   }, [text])
 
   const download = () => {
-    if (!ready.questions.length) return
+    if (!ready.questions.length || issues.length || text !== deferred) return
     const url = URL.createObjectURL(new Blob([packed], { type: 'text/html;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url
@@ -52,7 +52,7 @@ export default function App() {
     a.click()
     a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 10_000)
-    setNote(`Saved ${fileName(ready.title)} (${kb(size)}). Send it by message, Bluetooth or USB; it opens in any browser without internet.`)
+    setNote(`Saved ${fileName(ready.title)} (${kb(size)}). Send it by message, Bluetooth or USB, then open it in a browser without internet.`)
   }
 
   return (
@@ -61,8 +61,8 @@ export default function App() {
         <p className="brand"><span className="bag" aria-hidden="true" />Satchel</p>
         <h1>Pack a practice set that works without internet</h1>
         <p className="lede">
-          Write your questions once. Satchel turns them into one small file that opens on any phone or computer, with no
-          internet, no app and no login, and with large text, high contrast and no timer for every student.
+          Write your questions once. Satchel packs them into one small file for a phone or computer browser.
+          Students can practise offline, with larger text, high contrast and no timer. No account or app to install.
         </p>
       </header>
 
@@ -101,7 +101,7 @@ Why: an optional explanation, shown after answering
 2. A question with a typed answer?
 Answer: 1/2 | one half`}</pre>
             <p>Mark the right choice with <code>*</code>. Typed answers ignore capital letters and extra spaces, and number answers
-              match in any form (<code>1/2</code>, <code>0.5</code>, <code>50%</code>). Separate other accepted answers with <code>|</code>.</p>
+              accept equivalent fractions, decimals and percentages (<code>1/2</code>, <code>0.5</code>, <code>50%</code>). Separate other accepted answers with <code>|</code>.</p>
           </details>
         </section>
 
@@ -113,14 +113,15 @@ Answer: 1/2 | one half`}</pre>
           <div className="pack">
             <h2 className="pack-title">3. Pack it</h2>
             <div className="pack-actions">
-              <button type="button" className="primary" onClick={download} disabled={!ready.questions.length}>
+              <button type="button" className="primary" onClick={download} disabled={!ready.questions.length || issues.length > 0 || text !== deferred}>
                 Download the offline file <span className="size">({kb(size)})</span>
               </button>
-              <button type="button" className="secondary" onClick={() => window.print()} disabled={!ready.questions.length}>Print a paper copy</button>
+              <button type="button" className="secondary" onClick={() => window.print()} disabled={!ready.questions.length || issues.length > 0 || text !== deferred}>Print a paper copy</button>
             </div>
+            {issues.length > 0 && <p className="note">Fix the issues above before downloading or printing.</p>}
             {note && <p className="note" role="status">{note}</p>}
-            <p className="fine">One HTML file with everything inside. It keeps working when the phone is offline, remembers settings on the
-              device, and shows every question with its answer even in browsers that block scripts.</p>
+            <p className="fine">One HTML file with everything inside. It works offline and saves progress in the browser when local storage
+              is available. With scripts blocked, students can still read every question and reveal its answer.</p>
           </div>
         </section>
       </main>
@@ -148,7 +149,7 @@ Answer: 1/2 | one half`}</pre>
       </section>
 
       <footer className="footer">
-        <p>Satchel runs in your browser. Your questions are not uploaded anywhere, and the page cannot make network requests.
+        <p>Satchel processes your questions in your browser, with no uploads or analytics.
           Open source, built for AccessED Hacks 2026.</p>
       </footer>
 

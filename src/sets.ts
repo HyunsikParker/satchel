@@ -23,6 +23,7 @@ export interface Question {
   answers: string[]
   hint: string | null
   why: string | null
+  invalid?: boolean
 }
 
 export interface PracticeSet {
@@ -114,20 +115,18 @@ export function parseSet(source: string): { set: PracticeSet; issues: Issue[] } 
     }
     const a = ANSWER.exec(line)
     if (a) {
-      const value = a[1].trim()
-      // "Answer: b" picks an option by its letter.
-      if (current.options.length && /^[a-h]$/i.test(value)) {
-        const i = value.toLowerCase().charCodeAt(0) - 97
-        if (current.options[i]) current.options[i].correct = true
-        else issues.push({ line: n, message: `Question ${questions.length} has no option "${value}".` })
-      } else {
-        current.answers.push(...value.split('|').map((x) => x.trim()).filter(Boolean))
-      }
+      current.answers.push(...a[1].split('|').map((x) => x.trim()).filter(Boolean))
       lastField = null
       return
     }
     const o = optionFrom(line)
     if (o) {
+      const letter = /^\s*(?:\*\s*)?([a-h])\s*[.)]/i.exec(line)
+      const expected = String.fromCharCode(97 + current.options.length)
+      if (letter && letter[1].toLowerCase() !== expected) {
+        issues.push({ line: n, message: `Question ${questions.length}: use option letters in order. Expected ${expected}) here.` })
+        current.invalid = true
+      }
       current.options.push(o)
       lastField = null
       return
@@ -136,25 +135,34 @@ export function parseSet(source: string): { set: PracticeSet; issues: Issue[] } 
     if (lastField === 'prompt' && !current.options.length) current.prompt += ` ${line.trim()}`
     else if (lastField === 'hint') current.hint += ` ${line.trim()}`
     else if (lastField === 'why') current.why += ` ${line.trim()}`
-    else issues.push({ line: n, message: `Line ${n} was not understood: "${line.trim().slice(0, 40)}". Start options with a), b) or -, and answers with "Answer:".` })
+    else {
+      issues.push({ line: n, message: `Line ${n} was not understood: "${line.trim().slice(0, 40)}". Start options with a), b) or -, and answers with "Answer:".` })
+      current.invalid = true
+    }
   })
 
   for (const q of questions) {
     const k = questions.indexOf(q) + 1
+    const report = (message: string) => {
+      issues.push({ line: q.line, message })
+      q.invalid = true
+    }
     if (q.options.length) {
       q.kind = 'choice'
-      if (q.options.length < 2) issues.push({ line: q.line, message: `Question ${k} has only one option.` })
-      if (!q.options.some((o) => o.correct)) {
-        if (q.answers.length) {
-          // "Answer: Paris" with options: mark the option with that text.
-          const hit = q.options.find((o) => q.answers.some((a) => a.toLowerCase() === o.text.toLowerCase()))
-          if (hit) hit.correct = true
-        }
-        if (!q.options.some((o) => o.correct)) issues.push({ line: q.line, message: `Question ${k} has no right answer marked. Put * after the right option.` })
+      if (q.options.length < 2) report(`Question ${k} has only one option.`)
+      for (const answer of q.answers) {
+        const matches = /^[a-h]$/i.test(answer)
+          ? [q.options[answer.toLowerCase().charCodeAt(0) - 97]].filter(Boolean)
+          : q.options.filter((o) => o.text.toLowerCase() === answer.toLowerCase())
+        if (matches.length !== 1) report(`Question ${k}: "${answer}" must identify exactly one option.`)
+        else matches[0].correct = true
       }
+      const count = q.options.filter((o) => o.correct).length
+      if (count === 0) report(`Question ${k} has no right answer marked. Put * after the right option.`)
+      else if (count > 1) report(`Question ${k} has conflicting answers. Mark exactly one right option.`)
       q.answers = []
     } else if (!q.answers.length) {
-      issues.push({ line: q.line, message: `Question ${k} needs options or an "Answer:" line.` })
+      report(`Question ${k} needs options or an "Answer:" line.`)
     }
   }
   if (!questions.length && source.trim()) issues.push({ line: 1, message: 'No questions found. Number each question: "1. What is…?"' })
@@ -168,5 +176,5 @@ export function parseSet(source: string): { set: PracticeSet; issues: Issue[] } 
 
 /** Questions that can be practised: a choice question with a right option, or a typed question with an answer. */
 export function usable(set: PracticeSet): PracticeSet {
-  return { ...set, questions: set.questions.filter((q) => (q.kind === 'choice' ? q.options.some((o) => o.correct) && q.options.length > 1 : q.answers.length > 0)) }
+  return { ...set, questions: set.questions.filter((q) => !q.invalid && (q.kind === 'choice' ? q.options.filter((o) => o.correct).length === 1 && q.options.length > 1 : q.answers.length > 0)) }
 }

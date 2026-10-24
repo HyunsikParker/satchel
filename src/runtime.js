@@ -1,10 +1,10 @@
-/* Satchel practice runtime. Plain ES5 so the packed file runs in old phone browsers, with no network access and no
+/* Satchel practice runtime. Plain ES5 syntax for wider compatibility, with no network requests and no
  * libraries. The same code runs the preview in the Satchel page and the downloaded file. All text from the set is
  * inserted with textContent, never as HTML. */
 (function () {
   'use strict';
 
-  var VERSION = 1;
+  var VERSION = 2;
 
   function el(tag, attrs, kids) {
     var node = document.createElement(tag);
@@ -29,12 +29,14 @@
   function toNumber(s) {
     // Trailing punctuation goes ("5."), a leading point stays (".5").
     var t = String(s).toLowerCase().replace(/[\u2212\u2013]/g, '-').replace(/\s+/g, ' ').replace(/^\s+|[\s.,;:!?]+$/g, '').replace(/(\d),(\d{3})\b/g, '$1$2');
-    var m;
-    if ((m = /^(-?\d+)\s+(\d+)\/(\d+)$/.exec(t))) return (Math.abs(+m[1]) + (+m[2]) / (+m[3])) * (+m[1] < 0 ? -1 : 1);
-    if ((m = /^(-?\d+)\/(\d+)$/.exec(t))) return +m[2] === 0 ? null : (+m[1]) / (+m[2]);
-    if ((m = /^(-?\d*\.?\d+)\s*%$/.exec(t))) return (+m[1]) / 100;
-    if (/^-?\d*\.?\d+$/.test(t)) return +t;
-    return null;
+    var m, n = null;
+    if ((m = /^(-?\d+)\s+(\d+)\/(\d+)$/.exec(t))) n = +m[3] === 0 ? null : (Math.abs(+m[1]) + (+m[2]) / (+m[3])) * (m[1].charAt(0) === '-' ? -1 : 1);
+    else if ((m = /^(-?\d+)\/(\d+)$/.exec(t))) n = +m[2] === 0 ? null : (+m[1]) / (+m[2]);
+    else if ((m = /^(-?\d*\.?\d+)\s*%$/.exec(t))) n = (+m[1]) / 100;
+    else if (/^-?\d*\.?\d+$/.test(t)) n = +t;
+    // Beyond this range distinct integers can round to the same JavaScript number.
+    if (m) for (var i = 1; i < m.length; i++) if (Math.abs(+m[i]) > 9007199254740991) return null;
+    return n !== null && isFinite(n) && Math.abs(n) <= 9007199254740991 ? n : null;
   }
 
   function isCorrectText(input, answers) {
@@ -42,9 +44,10 @@
     if (!a) return false;
     var n = toNumber(input);
     for (var i = 0; i < answers.length; i++) {
-      if (normalize(answers[i]) === a) return true;
       var m = toNumber(answers[i]);
-      if (n !== null && m !== null && Math.abs(n - m) <= 1e-9 * Math.max(1, Math.abs(m))) return true;
+      if (n !== null || m !== null) {
+        if (n !== null && m !== null && (n === m || (n !== 0 && m !== 0 && n % 1 !== 0 && m % 1 !== 0 && Math.abs(n - m) <= 4e-15 * Math.max(Math.abs(n), Math.abs(m))))) return true;
+      } else if (normalize(answers[i]) === a) return true;
     }
     return false;
   }
@@ -53,7 +56,7 @@
     try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
   }
   function storageSet(key, value) {
-    try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage blocked: progress is not kept */ }
+    try { window.localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
   }
 
   function localVoice() {
@@ -84,10 +87,33 @@
       large: !!(saved && saved.large),
       contrast: !!(saved && saved.contrast)
     };
-    if (saved && saved.v === VERSION && saved.results) state.results = saved.results;
+    var resume = validSession(saved && saved.v === VERSION ? saved.session : null);
+    var storageFailed = false;
+
+    function validSession(session) {
+      if (!session || (session.screen !== 'question' && session.screen !== 'end') || !Array.isArray(session.order) || !session.order.length || session.order.length > set.questions.length) return null;
+      for (var i = 0; i < session.order.length; i++) if (typeof session.order[i] !== 'string' || !byId(session.order[i]) || session.order.indexOf(session.order[i]) !== i) return null;
+      if (typeof session.pos !== 'number' || session.pos % 1 !== 0 || session.pos < 0 || session.pos >= session.order.length) return null;
+      var q = byId(session.order[session.pos]);
+      if (session.picked !== null && (q.kind === 'text' ? typeof session.picked !== 'string' : typeof session.picked !== 'number' || session.picked % 1 !== 0 || session.picked < 0 || session.picked >= q.options.length)) return null;
+      if (typeof session.checked !== 'boolean' || typeof session.lastCorrect !== 'boolean' || typeof session.showHint !== 'boolean' || !session.results || typeof session.results !== 'object') return null;
+      var results = {};
+      for (var j = 0; j < session.order.length; j++) {
+        var id = session.order[j], result = session.results[id];
+        if (result === 'right' || result === 'wrong') results[id] = result;
+        if ((j < session.pos || session.screen === 'end' || (j === session.pos && session.checked)) && !results[id]) return null;
+      }
+      if (session.checked && (session.picked === null || (results[q.id] === 'right') !== session.lastCorrect)) return null;
+      return { screen: session.screen, order: session.order.slice(), pos: session.pos, results: results, checked: session.checked, picked: session.picked, lastCorrect: session.lastCorrect, showHint: session.showHint };
+    }
 
     function save() {
-      storageSet(key, { v: VERSION, results: state.results, large: state.large, contrast: state.contrast });
+      if (state.screen === 'question' || state.screen === 'end') {
+        resume = { screen: state.screen, order: state.order.slice(), pos: state.pos, results: state.results, checked: state.checked, picked: state.picked, lastCorrect: state.lastCorrect, showHint: state.showHint };
+      }
+      storageFailed = !storageSet(key, { v: VERSION, session: resume, large: state.large, contrast: state.contrast });
+      var notice = root.querySelector('.sat-storage');
+      if (notice) notice.hidden = !storageFailed;
     }
 
     function byId(id) {
@@ -114,6 +140,8 @@
       state.showHint = false;
       state.picked = null;
       state.screen = 'question';
+      for (var i = 0; i < ids.length; i++) delete state.results[ids[i]];
+      save();
       render(true);
     }
 
@@ -139,16 +167,20 @@
     }
 
     function toolbar() {
+      function toggle(name) {
+        state[name] = !state[name];
+        save();
+        render(false);
+        root.querySelector('[data-setting="' + name + '"]').focus();
+      }
       var bar = el('div', { className: 'sat-tools', role: 'group', 'aria-label': 'Reading options' }, [
-        el('button', { type: 'button', className: 'sat-tool', 'aria-pressed': state.large ? 'true' : 'false', text: 'Larger text', onclick: function () { state.large = !state.large; save(); render(false); } }),
-        el('button', { type: 'button', className: 'sat-tool', 'aria-pressed': state.contrast ? 'true' : 'false', text: 'High contrast', onclick: function () { state.contrast = !state.contrast; save(); render(false); } })
+        el('button', { type: 'button', className: 'sat-tool', 'data-setting': 'large', 'aria-pressed': state.large ? 'true' : 'false', text: 'Larger text', onclick: function () { toggle('large'); } }),
+        el('button', { type: 'button', className: 'sat-tool', 'data-setting': 'contrast', 'aria-pressed': state.contrast ? 'true' : 'false', text: 'High contrast', onclick: function () { toggle('contrast'); } })
       ]);
       return bar;
     }
 
     function startScreen() {
-      var done = 0;
-      for (var k in state.results) if (Object.prototype.hasOwnProperty.call(state.results, k) && byId(k)) done++;
       var kids = [
         el(H, { className: 'sat-title', text: set.title, tabindex: '-1' }),
         el('p', { className: 'sat-count', text: set.questions.length + (set.questions.length === 1 ? ' question' : ' questions') + ' · works without internet · no timer' })
@@ -159,10 +191,16 @@
         for (var i = 0; i < parts.length; i++) box.appendChild(el('p', { text: parts[i] }));
         kids.push(box);
       }
-      var actions = el('div', { className: 'sat-actions' }, [
-        el('button', { type: 'button', className: 'sat-primary', text: done ? 'Start again' : 'Start', onclick: function () { state.results = {}; save(); start(allIds()); } }),
+      var actions = el('div', { className: 'sat-actions' });
+      if (resume) actions.appendChild(el('button', { type: 'button', className: 'sat-primary', text: resume.screen === 'end' ? 'See saved results' : 'Continue at question ' + (resume.pos + 1), onclick: function () {
+        for (var k in resume) if (Object.prototype.hasOwnProperty.call(resume, k)) state[k] = resume[k];
+        render(true);
+      } }));
+      actions.appendChild(el('button', { type: 'button', className: resume ? 'sat-secondary' : 'sat-primary', text: resume ? 'Start again' : 'Start', onclick: function () { state.results = {}; start(allIds()); } }));
+      actions.appendChild(
         el('button', { type: 'button', className: 'sat-secondary', text: 'See all questions', onclick: function () { state.screen = 'all'; render(true); } })
-      ]);
+      );
+      if (resume) kids.push(el('p', { className: 'sat-count', text: 'Progress is saved in this browser. Sharing the device? Choose Start again.' }));
       kids.push(actions);
       return kids;
     }
@@ -180,7 +218,7 @@
         field = el('fieldset', { className: 'sat-options' }, [el('legend', { className: 'sr-only', text: q.prompt })]);
         for (var i = 0; i < q.options.length; i++) {
           var id = 'sat-o' + i;
-          var input = el('input', { type: 'radio', name: 'answer', id: id, value: String(i), disabled: state.checked, checked: state.checked && state.picked === i });
+          var input = el('input', { type: 'radio', name: 'answer', id: id, value: String(i), disabled: state.checked, checked: state.picked === i, onchange: function (e) { state.picked = +e.target.value; save(); } });
           var label = el('label', { 'for': id, className: 'sat-option' }, [input, el('span', { text: q.options[i].text })]);
           if (state.checked && q.options[i].correct) label.className += ' is-right';
           else if (state.checked && state.picked === i) label.className += ' is-wrong';
@@ -189,7 +227,7 @@
       } else {
         field = el('div', { className: 'sat-text' }, [
           el('label', { 'for': 'sat-input', text: 'Your answer' }),
-          el('input', { type: 'text', id: 'sat-input', name: 'answer', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', disabled: state.checked, value: state.checked ? state.picked : null })
+          el('input', { type: 'text', id: 'sat-input', name: 'answer', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', disabled: state.checked, value: state.picked, oninput: function (e) { state.picked = e.target.value; save(); } })
         ]);
       }
       form.appendChild(field);
@@ -197,10 +235,11 @@
       var buttons = el('div', { className: 'sat-actions' });
       if (!state.checked) {
         buttons.appendChild(el('button', { type: 'submit', className: 'sat-primary', text: 'Check' }));
-        if (q.hint && !state.showHint) buttons.appendChild(el('button', { type: 'button', className: 'sat-secondary', text: 'Show a hint', onclick: function () { state.showHint = true; render(false); var f = root.querySelector('.sat-hint'); if (f) announce('Hint: ' + q.hint); } }));
+        if (q.hint && !state.showHint) buttons.appendChild(el('button', { type: 'button', className: 'sat-secondary', text: 'Show a hint', onclick: function () { state.showHint = true; save(); render(false); root.querySelector('.sat-hint').focus(); } }));
       } else {
         buttons.appendChild(el('button', { type: 'button', className: 'sat-primary sat-next', text: state.pos + 1 < total ? 'Next question' : 'See my results', onclick: function () {
-          if (state.pos + 1 < total) { state.pos++; state.checked = false; state.showHint = false; state.picked = null; render(true); } else { state.screen = 'end'; render(true); }
+          if (state.pos + 1 < total) { state.pos++; state.checked = false; state.showHint = false; state.picked = null; } else { state.screen = 'end'; }
+          save(); render(true);
         } }));
       }
       form.appendChild(buttons);
@@ -230,7 +269,7 @@
         var next = root.querySelector('.sat-next');
         if (next) next.focus();
       });
-      var hint = q.hint && state.showHint ? el('p', { className: 'sat-hint' }, [el('strong', { text: 'Hint: ' }), q.hint]) : null;
+      var hint = q.hint && state.showHint ? el('p', { className: 'sat-hint', tabindex: '-1' }, [el('strong', { text: 'Hint: ' }), q.hint]) : null;
       if (state.checked) {
         feedback.className = 'sat-feedback ' + (state.lastCorrect ? 'is-right' : 'is-wrong');
         feedback.appendChild(el('p', { className: 'sat-verdict', text: state.lastCorrect ? 'Right.' : 'Not this time. The answer is: ' + rightAnswer(q) }));
@@ -251,7 +290,7 @@
       var missed = missedIds();
       var kids = [
         el(H, { className: 'sat-title', text: right + ' of ' + state.order.length + ' right', tabindex: '-1' }),
-        el('p', { className: 'sat-count', text: missed.length ? 'Practising the ones you missed again is the quickest way to remember them.' : 'Every answer was right.' })
+        el('p', { className: 'sat-count', text: missed.length ? 'You can practise the questions you missed.' : 'Every answer was right.' })
       ];
       if (missed.length) {
         var list = el('ul', { className: 'sat-missed' });
@@ -296,6 +335,7 @@
       var main = el('div', { className: 'sat-main' });
       for (var i = 0; i < body.length; i++) if (body[i]) main.appendChild(body[i]);
       root.appendChild(main);
+      root.appendChild(el('p', { className: 'sat-storage', role: 'status', hidden: !storageFailed, text: 'Your browser cannot save progress. Keep this file open to finish.' }));
       root.appendChild(live);
       if (moveFocus) { // only after the student acts, never when the set is first shown
         var h = root.querySelector(H);

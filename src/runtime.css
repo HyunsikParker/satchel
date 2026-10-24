@@ -44,6 +44,8 @@
 .sat-tool[aria-pressed='true'] { background: var(--sat-ink); color: var(--sat-paper); border-color: var(--sat-ink); }
 .sat-title { font-size: 1.5em; line-height: 1.2; margin: 4px 0 8px; }
 .sat-count { color: var(--sat-muted); margin: 0 0 14px; }
+.sat-storage { color: var(--sat-muted); font-size: 0.9em; margin: 18px 0 0; }
+.sat-main { overflow-wrap: break-word; }
 .sat-intro { border-left: 4px solid var(--sat-line); padding: 2px 0 2px 14px; margin: 0 0 18px; }
 .sat-intro p { margin: 0 0 8px; }
 .sat-progress { margin: 0; font-weight: 700; color: var(--sat-muted); font-size: 0.85em; }
