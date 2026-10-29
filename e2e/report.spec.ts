@@ -1,23 +1,23 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { readFile } from 'node:fs/promises'
 
 const questions = '# Return to class\n1. Write one half as a decimal.\nAnswer: .5\nHint: Divide one by two.\nWhy: One divided by two is 0.5.\n2. Pick the even number.\na) 3\nb) 4 *'
 
-test('student brings a readable report back from a real offline practice file', async ({ page, browser }) => {
+test('student brings a readable report back from a real offline practice file', async ({ page, browser }, testInfo) => {
   await page.goto('/')
   await page.getByLabel('Questions in plain text').fill(questions)
   const packed = page.waitForEvent('download')
   await page.getByRole('button', { name: /Download the offline file/ }).click()
-  const practice = resolve('test-results/report-practice.html')
+  const practice = testInfo.outputPath('report-practice.html')
   await (await packed).saveAs(practice)
   const context = await browser.newContext({ offline: true, viewport: { width: 375, height: 812 } })
   const student = await context.newPage()
   const errors: string[] = [], network: string[] = []
   student.on('pageerror', e => errors.push(e.message))
   student.on('request', r => { if (/^https?:/.test(r.url())) network.push(r.url()) })
-  await student.goto('file://' + practice)
+  await student.goto(pathToFileURL(practice).href)
   await student.getByRole('button', { name: 'Start', exact: true }).click()
   await student.getByLabel('Your answer').fill('5')
   await student.getByRole('button', { name: 'Show a hint' }).click()
@@ -33,7 +33,7 @@ test('student brings a readable report back from a real offline practice file', 
   await student.keyboard.press('Enter')
   const report = await saved
   expect(report.suggestedFilename()).toBe('satchel-practice-report.txt')
-  const reportPath = resolve('test-results/practice-report.txt')
+  const reportPath = testInfo.outputPath('practice-report.txt')
   await report.saveAs(reportPath)
   const text = await readFile(reportPath, 'utf8')
   expect(text).toContain('This attempt: 1 of 2 right.')
@@ -48,7 +48,7 @@ test('student brings a readable report back from a real offline practice file', 
     await student.setViewportSize({ width, height: 900 })
     expect(await student.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     expect((await new AxeBuilder({ page: student }).analyze()).violations).toEqual([])
-    await student.screenshot({ path: `test-results/report-${width}.png`, fullPage: true })
+    await student.screenshot({ path: testInfo.outputPath(`report-${width}.png`), fullPage: true })
   }
   await student.getByRole('button', { name: 'Practise the 1 I missed' }).click()
   await student.getByLabel('Your answer').fill('1/2')
@@ -56,7 +56,7 @@ test('student brings a readable report back from a real offline practice file', 
   await student.getByRole('button', { name: 'See my results' }).click()
   const retryDownload = student.waitForEvent('download')
   await student.getByRole('button', { name: 'Save practice report (.txt)' }).click()
-  const retryPath = resolve('test-results/retry-report.txt')
+  const retryPath = testInfo.outputPath('retry-report.txt')
   await (await retryDownload).saveAs(retryPath)
   const retry = await readFile(retryPath, 'utf8')
   expect(retry).toContain('This attempt: 1 of 1 right.')

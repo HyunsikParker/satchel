@@ -70,6 +70,8 @@ answers they did not record are labelled as missing. Previously downloaded files
 ## How it was checked
 
 `npm run check` passes 54 unit tests, the production build and 7 Chrome browser tests.
+On October 30, 2026, `npm run test:browsers` also passed all 21 browser checks on macOS: the same seven scenarios in
+Chrome, Playwright Firefox and Playwright WebKit. Downloads and screenshots use separate per-test output folders.
 
 - Parsing: all examples, alternate notation, unreadable lines, missing answers, conflicting keys and option letters out of order.
 - Grading: equivalent numbers, decimal place value, tiny values, unsafe integer rounding, negative mixed numbers and
@@ -87,8 +89,11 @@ answers they did not record are labelled as missing. Previously downloaded files
   Phone, tablet and desktop screenshots were inspected.
 - Security and size: escaping checks, no external requests from the offline player, and sample files below 60 KB.
 
-The player passes `esbuild --target=es5`. This verifies syntax, not support for every browser. Current Chrome is the tested
-browser; physical old phones and screen-reader software remain untested.
+The player passes `esbuild --target=es5`. This verifies syntax, not support for every browser. The browser tests above use
+desktop test engines, not physical old phones, iOS Safari or screen-reader software. Those remain untested. The macOS
+WebKit keyboard check uses Option-Tab to reach radio buttons, matching the browser's default navigation behaviour
+([Apple's keyboard guide](https://support.apple.com/guide/safari/cpsh003/mac)). It then checks selection and grading
+with the arrow and Enter keys.
 
 ## Run it locally
 
@@ -97,6 +102,16 @@ npm install
 npm run dev        # http://127.0.0.1:5173
 npm run check      # unit tests, build and browser tests
 ```
+
+For the three-browser suite, keep Chrome installed, then run:
+
+```bash
+npx playwright install firefox webkit
+npm run test:browsers
+```
+
+`npm run check` keeps the Chrome-only browser check; the wider suite is separate. The GitHub Pages workflow runs unit
+tests and the production build, not the browser suite.
 
 ## Record the walkthrough
 
@@ -135,7 +150,7 @@ file. The published MP4 is encoded from this recording with FFmpeg.
 - **AI assistance:** Claude (Anthropic) generated the initial implementation, tests and documentation. Codex (OpenAI)
   assisted with the October 24 grading, answer preservation and resume features, and the October 30 number-grouping,
   choice-validation and review-navigation fixes, plus offline practice reports. Tests and documentation accompany these updates.
-  Codex also assisted with the October 30 recording script, captions and walkthrough text.
+  Codex also assisted with the October 30 recording script, captions, walkthrough text and cross-browser test updates.
 - The October 30 walkthrough replaces the October 22 narrated video. The former video used local Qwen3-TTS; the current
   recording has no audio. No learner records are used.
 - Libraries: React, Vite and TypeScript for the teacher's page; Vitest, Testing Library, Playwright and axe-core for

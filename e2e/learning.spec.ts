@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const questions = '# Quick practice\n1. Write one half as a decimal.\nAnswer: .5\nHint: Divide one by two.\n2. Pick the even number.\na) 3\nb) 4 *\nHint: It divides into two equal whole numbers.'
 
@@ -15,13 +15,13 @@ test('teacher fixes an ambiguous answer key before exporting', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Print a paper copy' })).toBeEnabled()
 })
 
-test('downloaded file preserves drafts, focus and results across offline reopening', async ({ page, browser }) => {
+test('downloaded file preserves drafts, focus and results across offline reopening', async ({ page, browser }, testInfo) => {
   await page.goto('/')
   await page.getByLabel('Questions in plain text').fill(questions)
   const downloadEvent = page.waitForEvent('download')
   await page.getByRole('button', { name: /Download the offline file/ }).click()
   const download = await downloadEvent
-  const file = resolve('test-results/resume-practice.html')
+  const file = testInfo.outputPath('resume-practice.html')
   await download.saveAs(file)
   const context = await browser.newContext({ offline: true, viewport: { width: 375, height: 812 } })
   let learner = await context.newPage()
@@ -31,7 +31,7 @@ test('downloaded file preserves drafts, focus and results across offline reopeni
     p.on('request', (r) => { if (/^https?:/.test(r.url())) network.push(r.url()) })
   }
   watch(learner)
-  await learner.goto('file://' + file)
+  await learner.goto(pathToFileURL(file).href)
   await learner.getByRole('button', { name: 'Start', exact: true }).click()
   await learner.getByLabel('Your answer').fill('5')
   await learner.getByRole('button', { name: 'Show a hint' }).click()
@@ -47,20 +47,20 @@ test('downloaded file preserves drafts, focus and results across offline reopeni
   await learner.close()
   learner = await context.newPage()
   watch(learner)
-  await learner.goto('file://' + file)
-  await learner.screenshot({ path: 'test-results/resume-phone.png', fullPage: true })
+  await learner.goto(pathToFileURL(file).href)
+  await learner.screenshot({ path: testInfo.outputPath('resume-phone.png'), fullPage: true })
   await learner.getByRole('button', { name: 'See all questions' }).click()
   await expect(learner.locator('.sat-all > li')).toHaveCount(2)
   expect((await new AxeBuilder({ page: learner }).analyze()).violations).toEqual([])
   expect(await learner.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  await learner.screenshot({ path: 'test-results/all-questions-phone.png', fullPage: true })
+  await learner.screenshot({ path: testInfo.outputPath('all-questions-phone.png'), fullPage: true })
   await learner.getByRole('button', { name: 'Continue at question 2' }).click()
   await expect(learner.getByLabel('4', { exact: true })).toBeChecked()
   await learner.getByRole('button', { name: 'High contrast' }).click()
   await learner.getByRole('button', { name: 'Show a hint' }).click()
   expect((await new AxeBuilder({ page: learner }).analyze()).violations).toEqual([])
   expect(await learner.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  await learner.screenshot({ path: 'test-results/hint-phone.png', fullPage: true })
+  await learner.screenshot({ path: testInfo.outputPath('hint-phone.png'), fullPage: true })
   await learner.getByRole('button', { name: 'Check', exact: true }).click()
   await learner.getByRole('button', { name: 'See my results' }).click()
   await expect(learner.getByRole('heading', { level: 1 })).toHaveText('1 of 2 right')
@@ -78,11 +78,11 @@ test('downloaded file preserves drafts, focus and results across offline reopeni
   expect(network).toEqual([])
   await context.close()
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.screenshot({ path: 'test-results/workspace-desktop.png', fullPage: true })
+  await page.screenshot({ path: testInfo.outputPath('workspace-desktop.png'), fullPage: true })
 })
 
 
-test('unambiguous choices and grouped numbers survive a real offline export', async ({ page, browser }) => {
+test('unambiguous choices and grouped numbers survive a real offline export', async ({ page, browser }, testInfo) => {
   await page.goto('/')
   const editor = page.getByLabel('Questions in plain text')
   for (const source of ['1. Pick four.\na) *\nb) 3', '1. Pick four.\na) 4 *\nb) 4']) {
@@ -94,11 +94,11 @@ test('unambiguous choices and grouped numbers survive a real offline export', as
   await editor.fill('# Large numbers\n1. Write one million as a number.\nAnswer: 1,000,000')
   const downloadEvent = page.waitForEvent('download')
   await page.getByRole('button', { name: /Download the offline file/ }).click()
-  const file = resolve('test-results/large-numbers-practice.html')
+  const file = testInfo.outputPath('large-numbers-practice.html')
   await (await downloadEvent).saveAs(file)
   const context = await browser.newContext({ offline: true })
   const learner = await context.newPage()
-  await learner.goto('file://' + file)
+  await learner.goto(pathToFileURL(file).href)
   await learner.getByRole('button', { name: 'Start', exact: true }).click()
   await learner.getByLabel('Your answer').fill('1000000')
   await learner.getByRole('button', { name: 'Check', exact: true }).click()

@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
+  workers: 2,
   retries: 0,
   reporter: [['list']],
   use: {
@@ -16,6 +17,8 @@ export default defineConfig({
       name: 'chrome',
       use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     },
+    { name: 'firefox', use: { browserName: 'firefox' } },
+    { name: 'webkit', use: { browserName: 'webkit' } },
   ],
   webServer: {
     command: 'npm run build && npm run preview -- --port 4173 --strictPort',
