@@ -89,6 +89,8 @@
       order: [],
       pos: 0,
       results: {},
+      answers: {}, // checked answers for the current practice report
+      retry: false,
       checked: false,
       lastCorrect: false,
       showHint: false,
@@ -106,19 +108,23 @@
       var q = byId(session.order[session.pos]);
       if (session.picked !== null && (q.kind === 'text' ? typeof session.picked !== 'string' : typeof session.picked !== 'number' || session.picked % 1 !== 0 || session.picked < 0 || session.picked >= q.options.length)) return null;
       if (typeof session.checked !== 'boolean' || typeof session.lastCorrect !== 'boolean' || typeof session.showHint !== 'boolean' || !session.results || typeof session.results !== 'object') return null;
-      var results = {};
+      var results = {}, answers = {};
       for (var j = 0; j < session.order.length; j++) {
         var id = session.order[j], result = session.results[id];
         if (result === 'right' || result === 'wrong') results[id] = result;
+        var answer = session.answers && session.answers[id];
+        if (results[id] && answer && typeof answer.text === 'string' && typeof answer.hintUsed === 'boolean') {
+          answers[id] = { text: answer.text, hintUsed: answer.hintUsed };
+        }
         if ((j < session.pos || session.screen === 'end' || (j === session.pos && session.checked)) && !results[id]) return null;
       }
       if (session.checked && (session.picked === null || (results[q.id] === 'right') !== session.lastCorrect)) return null;
-      return { screen: session.screen, order: session.order.slice(), pos: session.pos, results: results, checked: session.checked, picked: session.picked, lastCorrect: session.lastCorrect, showHint: session.showHint };
+      return { screen: session.screen, order: session.order.slice(), pos: session.pos, results: results, answers: answers, retry: session.retry === true, checked: session.checked, picked: session.picked, lastCorrect: session.lastCorrect, showHint: session.showHint };
     }
 
     function save() {
       if (state.screen === 'question' || state.screen === 'end') {
-        resume = { screen: state.screen, order: state.order.slice(), pos: state.pos, results: state.results, checked: state.checked, picked: state.picked, lastCorrect: state.lastCorrect, showHint: state.showHint };
+        resume = { screen: state.screen, order: state.order.slice(), pos: state.pos, results: state.results, answers: state.answers, retry: state.retry, checked: state.checked, picked: state.picked, lastCorrect: state.lastCorrect, showHint: state.showHint };
       }
       storageFailed = !storageSet(key, { v: VERSION, session: resume, large: state.large, contrast: state.contrast });
       var notice = root.querySelector('.sat-storage');
@@ -142,14 +148,15 @@
       setTimeout(function () { live.textContent = text; }, 30);
     }
 
-    function start(ids) {
+    function start(ids, retry) {
       state.order = ids;
+      state.retry = !!retry;
       state.pos = 0;
       state.checked = false;
       state.showHint = false;
       state.picked = null;
       state.screen = 'question';
-      for (var i = 0; i < ids.length; i++) delete state.results[ids[i]];
+      for (var i = 0; i < ids.length; i++) { delete state.results[ids[i]]; delete state.answers[ids[i]]; }
       save();
       render(true);
     }
@@ -277,6 +284,7 @@
         state.checked = true;
         state.lastCorrect = right;
         state.results[q.id] = right ? 'right' : 'wrong';
+        state.answers[q.id] = { text: q.kind === 'choice' ? q.options[state.picked].text : state.picked, hintUsed: state.showHint };
         save();
         render(false);
         announce((right ? 'Right. ' : 'Not this time. The answer is: ' + rightAnswer(q) + '. ') + (q.why || ''));
@@ -315,10 +323,66 @@
         kids.push(list);
       }
       var actions = el('div', { className: 'sat-actions' });
-      if (missed.length) actions.appendChild(el('button', { type: 'button', className: 'sat-primary', text: 'Practise the ' + missed.length + ' I missed', onclick: function () { start(missed); } }));
+      if (missed.length) actions.appendChild(el('button', { type: 'button', className: 'sat-primary', text: 'Practise the ' + missed.length + ' I missed', onclick: function () { start(missed, true); } }));
       actions.appendChild(el('button', { type: 'button', className: missed.length ? 'sat-secondary' : 'sat-primary', text: 'Start over', onclick: function () { state.results = {}; save(); start(allIds()); } }));
       kids.push(actions);
+      kids.push(reportControls(right));
       return kids;
+    }
+
+    function practiceReport(right) {
+      var lines = [
+        'Satchel practice report', set.title, 'Set reference: ' + set.id, '',
+        'This attempt: ' + right + ' of ' + state.order.length + ' right.',
+        'Questions in this attempt: ' + state.order.length + ' of ' + set.questions.length + ' in the set.',
+        state.retry ? 'This is a retry of missed questions, not a new score for the whole set.' : 'This report covers the attempt shown on the results screen.',
+        'Practice only. Hints and retries are available; this is not a verified grade.', ''
+      ];
+      for (var i = 0; i < state.order.length; i++) {
+        var q = byId(state.order[i]), answer = state.answers[q.id], number = 0;
+        for (var j = 0; j < set.questions.length; j++) if (set.questions[j].id === q.id) number = j + 1;
+        lines.push('Question ' + number + ': ' + q.prompt);
+        lines.push('Your answer: ' + (answer ? answer.text : 'Not recorded by the earlier player.'));
+        lines.push('Result: ' + (state.results[q.id] === 'right' ? 'Right' : 'Not right'));
+        lines.push('Accepted answer: ' + rightAnswer(q));
+        lines.push('Hint opened: ' + (answer ? (answer.hintUsed ? 'Yes' : 'No') : 'Not recorded'));
+        if (q.why) lines.push('Explanation: ' + q.why);
+        lines.push('');
+      }
+      lines.push('Created on this device. Nothing was sent to a teacher or uploaded.');
+      return lines.join('\n');
+    }
+
+    function reportControls(right) {
+      var text = practiceReport(right);
+      var field = el('textarea', { className: 'sat-report-text', 'aria-label': 'Practice report', readonly: true, rows: '12', spellcheck: 'false' });
+      field.value = text;
+      var details = el('details', { className: 'sat-report-copy' }, [el('summary', { text: 'View or copy report' }), field]);
+      var status = el('p', { className: 'sat-count', role: 'status', hidden: true });
+      function saveReport() {
+        try {
+          if (!window.Blob || !window.URL || !window.URL.createObjectURL) throw new Error('Download unavailable');
+          var url = window.URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+          var link = el('a', { href: url, download: 'satchel-practice-report.txt' });
+          if (!('download' in link)) { window.URL.revokeObjectURL(url); throw new Error('Download unavailable'); }
+          root.appendChild(link);
+          link.click();
+          root.removeChild(link);
+          window.setTimeout(function () { window.URL.revokeObjectURL(url); }, 1000);
+          status.textContent = 'Download requested. Check your downloads for satchel-practice-report.txt. If it is missing, use View or copy report.';
+        } catch (e) {
+          details.open = true;
+          status.textContent = 'Your browser could not start the download. Copy the report below instead.';
+          field.focus();
+          field.select();
+        }
+        status.hidden = false;
+      }
+      return el('div', { className: 'sat-report' }, [
+        el('p', { text: 'Keep this attempt to review or share with your teacher. The report includes your answers and any hints you opened.' }),
+        el('button', { type: 'button', className: 'sat-secondary', text: 'Save practice report (.txt)', onclick: saveReport }),
+        status, details
+      ]);
     }
 
     function allScreen() {

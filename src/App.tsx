@@ -121,7 +121,8 @@ Answer: 1/2 | one half`}</pre>
             {issues.length > 0 && <p className="note">Fix the issues above before downloading or printing.</p>}
             {note && <p className="note" role="status">{note}</p>}
             <p className="fine">One HTML file with everything inside. It works offline and saves progress in the browser when local storage
-              is available. With scripts blocked, students can still read every question and reveal its answer.</p>
+              is available. After practice, students can save a text report with their answers to bring back to a teacher.
+              With scripts blocked, students can still read every question and reveal its answer.</p>
           </div>
         </section>
       </main>

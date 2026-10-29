@@ -37,12 +37,15 @@ For the student, the file offers:
 - saved progress, including an unfinished answer, when the browser allows local storage. Reopen the same file in the same
   browser and choose *Continue at question…*. The full question list also offers a return to the saved attempt or results.
   On a shared device, *Start again* clears the previous attempt;
+- a plain-text practice report with the checked answers, feedback and hint use, ready to bring back to a teacher.
+  The report labels retries and keeps the original question numbers. It saves without internet; a copyable version is
+  available if downloads do not work. Nothing is sent automatically;
 - larger text and high contrast, without losing the current answer; read-aloud when a local English voice is available;
 - a version that still works when scripts are blocked: every question with the answer behind *Show the answer*.
 
 Conflicting answers, missing keys, empty or identical options, and unreadable lines block download and print until
-corrected, so a broken question cannot silently disappear from the set. The three downloaded files in the browser tests
-are about 27–29 KB; size grows with the questions.
+corrected, so a broken question cannot silently disappear from the set. The four downloaded files in the browser tests
+are about 32–34 KB; size grows with the questions.
 
 ## Why practice questions
 
@@ -60,11 +63,12 @@ images permitted. The player makes no network requests. Question text is escaped
 Editor drafts, settings and practice progress are stored in the browser. Local-file storage varies by browser.
 Private browsing, clearing storage, moving a file or changing browsers may prevent continuation. If saving fails during
 practice, the player tells the learner to keep the file open to finish. Version 1 settings are retained when encountered,
-but its incomplete progress format cannot be resumed. Previously downloaded files keep their original behaviour.
+but its incomplete progress format cannot be resumed. Version 2 sessions saved before reports were added still resume;
+answers they did not record are labelled as missing. Previously downloaded files keep their original behaviour.
 
 ## How it was checked
 
-`npm run check` passes 47 unit tests, the production build and 6 Chrome browser tests.
+`npm run check` passes 54 unit tests, the production build and 7 Chrome browser tests.
 
 - Parsing: all examples, alternate notation, unreadable lines, missing answers, conflicting keys and option letters out of order.
 - Grading: equivalent numbers, decimal place value, tiny values, unsafe integer rounding, negative mixed numbers and
@@ -74,8 +78,12 @@ but its incomplete progress format cannot be resumed. Previously downloaded file
   blocked storage degrades safely.
 - Download: an actual file opened offline, closed and reopened with its draft restored, completed and retried. A separate
   check opens a downloaded file with JavaScript disabled and reveals its answers.
+- Reports: checked answers and hint use survive reopening; retries include only that attempt; older saved sessions
+  identify answers that were not recorded. A real offline download produced a readable text file, with keyboard access
+  and a selectable fallback when downloading was unavailable.
 - Accessibility: no axe violations in the tested editor and player states; keyboard interactions; no horizontal overflow
-  at 375px with larger text and high contrast. Phone and desktop screenshots were inspected.
+  at 375px with larger text and high contrast. Report screens were also checked at 768px and 1280px.
+  Phone, tablet and desktop screenshots were inspected.
 - Security and size: escaping checks, no external requests from the offline player, and sample files below 60 KB.
 
 The player passes `esbuild --target=es5`. This verifies syntax, not support for every browser. Current Chrome is the tested
@@ -100,7 +108,9 @@ npm run check      # unit tests, build and browser tests
 
 - One question type at a time: multiple choice (one right answer) or a short typed answer. No images, audio or maths
   notation yet.
-- Results stay on the student's device; there is no class dashboard, by design, since the file has no way to send them.
+- Results stay on the student's device until they choose to share the text report; there is no class dashboard or
+  automatic hand-in. Reports are for practice, not verified grades. A retry report covers only the retried questions;
+  starting again replaces the current attempt. Save a report first if you want to keep it.
 - Read-aloud requires a local English voice.
 - Number comparison is limited to JavaScript's safe numeric range; larger values require matching written answers.
   This is a short-answer checker, not a symbolic maths engine.
@@ -111,8 +121,8 @@ npm run check      # unit tests, build and browser tests
 - Built during AccessED Hacks 2026 (started October 22, 2026). No pre-existing project code.
 - **AI assistance:** Claude (Anthropic) generated the initial implementation, tests and documentation. Codex (OpenAI)
   assisted with the October 24 grading, answer preservation and resume features, and the October 30 number-grouping,
-  choice-validation and review-navigation fixes, with tests and documentation for both updates.
-- The 1 minute 3 second video shows the October 22 version. Current resume and validation features are in the live app.
+  choice-validation and review-navigation fixes, plus offline practice reports. Tests and documentation accompany these updates.
+- The 1 minute 3 second video shows the October 22 version. Current resume, validation and practice-report features are in the live app.
 - Libraries: React, Vite and TypeScript for the teacher's page; Vitest, Testing Library, Playwright and axe-core for
   tests. The packed file uses no libraries.
 
