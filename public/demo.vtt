@@ -1,43 +1,49 @@
 WEBVTT
 
-00:00:00.400 --> 00:00:07.953
-Satchel turns practice questions that a teacher types as plain text into one small file that works without internet,
+1
+00:00:00.079 --> 00:00:06.191
+Satchel packs a practice set into one HTML file. The questions and answers in this demonstration are fictional.
 
-00:00:07.953 --> 00:00:11.143
-on any phone, with a keyboard or a screen reader.
+2
+00:00:06.191 --> 00:00:12.274
+Write questions in plain text. These three include a typed fraction, a multiple-choice question and a number.
 
-00:00:11.143 --> 00:00:15.440
-This example has five fractions questions, and all five are ready.
+3
+00:00:12.274 --> 00:00:21.355
+A missing answer key blocks download. Correcting the question makes the complete set available again.
 
-00:00:16.443 --> 00:00:20.414
-In the preview, the student sees one question at a time,
+4
+00:00:21.355 --> 00:00:27.509
+Download the actual HTML file. The recording then opens that file with network access disabled in the browser.
 
-00:00:20.414 --> 00:00:22.683
-with large targets and no timer.
+5
+00:00:27.509 --> 00:00:33.603
+This downloaded set is about 32 KB. It opens directly from a file; no account or installation is needed.
 
-00:00:22.683 --> 00:00:25.803
-A wrong answer shows the right one, and why.
+6
+00:00:33.603 --> 00:00:41.765
+Hints, larger text and high contrast keep the unfinished answer. Here, 5 is deliberately the wrong answer.
 
-00:00:26.807 --> 00:00:31.677
-Typed answers accept any form the teacher allows, so one half counts as right.
+7
+00:00:41.765 --> 00:00:51.351
+Reload the same file and continue at question 1. The unfinished answer is restored in this tested Chrome browser.
 
-00:00:31.677 --> 00:00:34.487
-A hint is there when the student asks for it.
+8
+00:00:51.351 --> 00:01:01.544
+Checking shows the right answer and explanation. The other two answers are correct, including 1,000 with a grouping comma.
 
-00:00:35.489 --> 00:00:40.517
-At the end, the student sees what they missed and can practise just those two again.
+9
+00:01:01.544 --> 00:01:09.664
+The result is 2 of 3 right. Reloading preserves the completed attempt, and the missed question can be practised again.
 
-00:00:40.517 --> 00:00:44.049
-Larger text and high contrast are remembered on the device.
+10
+00:01:09.664 --> 00:01:19.796
+Save a real text report while offline. It records checked answers, explanations and hint use; the copyable view contains the same text.
 
-00:00:45.052 --> 00:00:49.177
-The teacher downloads one HTML file of about twenty-five kilobytes.
+11
+00:01:19.796 --> 00:01:29.459
+Retry only the missed question. The answer 1/2 is accepted as equivalent to .5; the retry is labelled separately.
 
-00:00:49.177 --> 00:00:52.132
-It opens from the downloads folder with no data,
-
-00:00:52.132 --> 00:00:56.626
-and if scripts are blocked it still lists every question with its answer.
-
-00:00:56.626 --> 00:01:00.012
-A paper copy prints with the answers on their own page.
+12
+00:01:29.459 --> 00:01:38.530
+A report can be saved or copied for the learner to share. Nothing is handed in automatically. These are practice records, not verified grades.

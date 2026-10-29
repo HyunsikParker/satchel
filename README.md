@@ -4,11 +4,12 @@
 and download one HTML file. Students can answer at their own pace, with hints, feedback, larger text and high contrast.
 No account or app to install.
 
-Live demo: https://hyunsikparker.github.io/satchel/ · Video walkthrough (1 min 3 s, captions):
+Live demo: https://hyunsikparker.github.io/satchel/ · Video walkthrough (about 1 min 39 s, captions):
 https://hyunsikparker.github.io/satchel/demo.html
 
-The video is recorded from the live page by `scripts/demo.mjs` (Playwright), which checks the numbers the narration
-quotes against the page as it records. The narration is a synthetic voice (Qwen3-TTS, run locally).
+The October 30 video is recorded from the local production build by `scripts/demo.mjs` (Playwright), with captions and
+no narration. Its 12 checked scenes include a real HTML download opened with the browser network disabled, draft
+restoration, grading, and downloaded reports for the full attempt and a retry. All inputs are fictional.
 
 ## The barrier
 
@@ -97,6 +98,18 @@ npm run dev        # http://127.0.0.1:5173
 npm run check      # unit tests, build and browser tests
 ```
 
+## Record the walkthrough
+
+Start a local production preview (`npm run build`, then `npm run preview`). Run:
+
+```bash
+node scripts/demo.mjs http://127.0.0.1:4173 /tmp/satchel-demo
+```
+
+The script creates a WebM, WebVTT captions, scene screenshots, timing metadata, a downloaded practice HTML file and
+two actual text reports. It uses a fresh browser context and disables network access before opening the downloaded
+file. The published MP4 is encoded from this recording with FFmpeg.
+
 ## Code map
 
 - `src/sets.ts` reads the plain-text question format and reports problems.
@@ -122,7 +135,9 @@ npm run check      # unit tests, build and browser tests
 - **AI assistance:** Claude (Anthropic) generated the initial implementation, tests and documentation. Codex (OpenAI)
   assisted with the October 24 grading, answer preservation and resume features, and the October 30 number-grouping,
   choice-validation and review-navigation fixes, plus offline practice reports. Tests and documentation accompany these updates.
-- The 1 minute 3 second video shows the October 22 version. Current resume, validation and practice-report features are in the live app.
+  Codex also assisted with the October 30 recording script, captions and walkthrough text.
+- The October 30 walkthrough replaces the October 22 narrated video. The former video used local Qwen3-TTS; the current
+  recording has no audio. No learner records are used.
 - Libraries: React, Vite and TypeScript for the teacher's page; Vitest, Testing Library, Playwright and axe-core for
   tests. The packed file uses no libraries.
 

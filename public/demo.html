@@ -27,11 +27,11 @@ li { margin-bottom: 10px; max-width: 70ch; }
 <body>
   <main>
     <h1>Satchel: a walkthrough</h1>
-    <p class="meta">Five made-up fractions questions: typed as plain text, practised one at a time in the preview, then packed into one offline file. 1 min 3 s, narrated, with captions.</p>
+    <p class="meta">October 30, 2026 · about 1 min 39 s · captions, without narration. Three fictional questions, answered in a downloaded file with the browser network disabled, then saved as a practice report.</p>
     <video controls preload="metadata" playsinline poster="demo.jpg" aria-describedby="transcript-title">
       <source src="demo.mp4" type="video/mp4">
       <track kind="captions" src="demo.vtt" srclang="en" label="English" default>
-      Your browser cannot play this video; the transcript below has the same narration.
+      Your browser cannot play this video; the transcript below contains the captions.
     </video>
     <div class="links">
       <a href="./">Open the app</a>
@@ -40,14 +40,20 @@ li { margin-bottom: 10px; max-width: 70ch; }
     </div>
     <h2 id="transcript-title">Transcript</h2>
     <ol>
-      <li>Satchel turns practice questions that a teacher types as plain text into one small file that works without internet, on any phone, with a keyboard or a screen reader. This example has five fractions questions, and all five are ready.</li>
-      <li>In the preview, the student sees one question at a time, with large targets and no timer. A wrong answer shows the right one, and why.</li>
-      <li>Typed answers accept any form the teacher allows, so one half counts as right. A hint is there when the student asks for it.</li>
-      <li>At the end, the student sees what they missed and can practise just those two again. Larger text and high contrast are remembered on the device.</li>
-      <li>The teacher downloads one HTML file of about twenty-five kilobytes. It opens from the downloads folder with no data, and if scripts are blocked it still lists every question with its answer. A paper copy prints with the answers on their own page.</li>
+      <li>Satchel packs a practice set into one HTML file. The questions and answers in this demonstration are fictional.</li>
+      <li>Write questions in plain text. These three include a typed fraction, a multiple-choice question and a number.</li>
+      <li>A missing answer key blocks download. Correcting the question makes the complete set available again.</li>
+      <li>Download the actual HTML file. The recording then opens that file with network access disabled in the browser.</li>
+      <li>This downloaded set is about 32 KB. It opens directly from a file; no account or installation is needed.</li>
+      <li>Hints, larger text and high contrast keep the unfinished answer. Here, 5 is deliberately the wrong answer.</li>
+      <li>Reload the same file and continue at question 1. The unfinished answer is restored in this tested Chrome browser.</li>
+      <li>Checking shows the right answer and explanation. The other two answers are correct, including 1,000 with a grouping comma.</li>
+      <li>The result is 2 of 3 right. Reloading preserves the completed attempt, and the missed question can be practised again.</li>
+      <li>Save a real text report while offline. It records checked answers, explanations and hint use; the copyable view contains the same text.</li>
+      <li>Retry only the missed question. The answer 1/2 is accepted as equivalent to .5; the retry is labelled separately.</li>
+      <li>A report can be saved or copied for the learner to share. Nothing is handed in automatically. These are practice records, not verified grades.</li>
     </ol>
-    <p class="fine">Recorded from the live app with the built-in made-up example. The narration is a synthetic voice made with a
-      text-to-speech model (Qwen3-TTS); captions are on by default.</p>
+    <p class="fine">Recorded from the current local production build in Chrome. The script checks the displayed results and reads the downloaded HTML and report files. No HTTP requests were observed after network access was disabled. All questions and answers are demonstration inputs, not learner records. Local-file storage and device support vary; this is not a learning-outcome study.</p>
   </main>
 </body>
 </html>
