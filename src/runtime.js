@@ -28,7 +28,16 @@
   /** "1/2", "0.5", ".5", "1 1/2", "50%", "1,000" as numbers; null when the text is not a number. */
   function toNumber(s) {
     // Trailing punctuation goes ("5."), a leading point stays (".5").
-    var t = String(s).toLowerCase().replace(/[\u2212\u2013]/g, '-').replace(/\s+/g, ' ').replace(/^\s+|[\s.,;:!?]+$/g, '').replace(/(\d),(\d{3})\b/g, '$1$2');
+    var t = String(s).toLowerCase().replace(/[\u2212\u2013]/g, '-').replace(/\s+/g, ' ').replace(/^\s+|[\s.,;:!?]+$/g, '');
+    // Validate each complete numeric part before removing thousands separators.
+    // A partial replacement can reject 1,000,000 or silently accept 1234,567.
+    var badGrouping = false;
+    t = t.replace(/[\d.,]+/g, function (part) {
+      if (part.indexOf(',') === -1) return part;
+      if (!/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(part)) badGrouping = true;
+      return part.replace(/,/g, '');
+    });
+    if (badGrouping) return null;
     var m, n = null;
     if ((m = /^(-?\d+)\s+(\d+)\/(\d+)$/.exec(t))) n = +m[3] === 0 ? null : (Math.abs(+m[1]) + (+m[2]) / (+m[3])) * (m[1].charAt(0) === '-' ? -1 : 1);
     else if ((m = /^(-?\d+)\/(\d+)$/.exec(t))) n = +m[2] === 0 ? null : (+m[1]) / (+m[2]);
@@ -180,6 +189,14 @@
       return bar;
     }
 
+    function resumeButton() {
+      if (!resume) return null;
+      return el('button', { type: 'button', className: 'sat-primary', text: resume.screen === 'end' ? 'See saved results' : 'Continue at question ' + (resume.pos + 1), onclick: function () {
+        for (var k in resume) if (Object.prototype.hasOwnProperty.call(resume, k)) state[k] = resume[k];
+        render(true);
+      } });
+    }
+
     function startScreen() {
       var kids = [
         el(H, { className: 'sat-title', text: set.title, tabindex: '-1' }),
@@ -192,10 +209,7 @@
         kids.push(box);
       }
       var actions = el('div', { className: 'sat-actions' });
-      if (resume) actions.appendChild(el('button', { type: 'button', className: 'sat-primary', text: resume.screen === 'end' ? 'See saved results' : 'Continue at question ' + (resume.pos + 1), onclick: function () {
-        for (var k in resume) if (Object.prototype.hasOwnProperty.call(resume, k)) state[k] = resume[k];
-        render(true);
-      } }));
+      if (resume) actions.appendChild(resumeButton());
       actions.appendChild(el('button', { type: 'button', className: resume ? 'sat-secondary' : 'sat-primary', text: resume ? 'Start again' : 'Start', onclick: function () { state.results = {}; start(allIds()); } }));
       actions.appendChild(
         el('button', { type: 'button', className: 'sat-secondary', text: 'See all questions', onclick: function () { state.screen = 'all'; render(true); } })
@@ -323,7 +337,10 @@
       return [
         el(H, { className: 'sat-title', text: set.title, tabindex: '-1' }),
         list,
-        el('div', { className: 'sat-actions' }, [el('button', { type: 'button', className: 'sat-primary', text: 'Practise one at a time', onclick: function () { start(allIds()); } })])
+        el('div', { className: 'sat-actions' }, [
+          resumeButton(),
+          el('button', { type: 'button', className: resume ? 'sat-secondary' : 'sat-primary', text: resume ? 'Start again' : 'Practise one at a time', onclick: function () { start(allIds()); } })
+        ])
       ];
     }
 

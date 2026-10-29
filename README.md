@@ -31,17 +31,18 @@ For the student, the file offers:
 - one question at a time, with large tap targets and no timer;
 - choices as real radio buttons and typed answers in a labelled text box, all usable by keyboard and screen reader;
 - typed answers that forgive capital letters, extra spaces and the form of a number (`1/2`, `0.5`, `.5` and `50%` all
-  match), plus any other accepted answers the teacher lists;
+  match), correctly grouped large numbers (`1,000,000` and `1000000`), plus any other accepted answers the teacher lists;
 - a hint on request, the right answer and the explanation after each check, and at the end the questions they missed,
   with *Practise the ones I missed*;
 - saved progress, including an unfinished answer, when the browser allows local storage. Reopen the same file in the same
-  browser and choose *Continue at question…*. On a shared device, *Start again* clears the previous attempt;
+  browser and choose *Continue at question…*. The full question list also offers a return to the saved attempt or results.
+  On a shared device, *Start again* clears the previous attempt;
 - larger text and high contrast, without losing the current answer; read-aloud when a local English voice is available;
 - a version that still works when scripts are blocked: every question with the answer behind *Show the answer*.
 
-Conflicting answers, missing keys and unreadable lines block download and print until corrected, so a broken question
-cannot silently disappear from the set. The two downloaded files in the browser tests are about 27–29 KB; size grows
-with the questions.
+Conflicting answers, missing keys, empty or identical options, and unreadable lines block download and print until
+corrected, so a broken question cannot silently disappear from the set. The three downloaded files in the browser tests
+are about 27–29 KB; size grows with the questions.
 
 ## Why practice questions
 
@@ -63,12 +64,14 @@ but its incomplete progress format cannot be resumed. Previously downloaded file
 
 ## How it was checked
 
-`npm run check` passes 32 unit tests, the production build and 5 Chrome browser tests.
+`npm run check` passes 47 unit tests, the production build and 6 Chrome browser tests.
 
 - Parsing: all examples, alternate notation, unreadable lines, missing answers, conflicting keys and option letters out of order.
-- Grading: equivalent numbers, decimal place value, tiny values, unsafe integer rounding and negative mixed numbers.
+- Grading: equivalent numbers, decimal place value, tiny values, unsafe integer rounding, negative mixed numbers and
+  complete thousands-separator groups, including malformed groups that must not be silently corrected.
 - Practice: hints and reading controls preserve answers; keyboard focus stays on the reading control; reopening restores
-  progress; restart clears an attempt; corrupt or blocked storage degrades safely.
+  progress; reading the full question list keeps the saved attempt available; restart clears an attempt; corrupt or
+  blocked storage degrades safely.
 - Download: an actual file opened offline, closed and reopened with its draft restored, completed and retried. A separate
   check opens a downloaded file with JavaScript disabled and reveals its answers.
 - Accessibility: no axe violations in the tested editor and player states; keyboard interactions; no horizontal overflow
@@ -107,7 +110,8 @@ npm run check      # unit tests, build and browser tests
 
 - Built during AccessED Hacks 2026 (started October 22, 2026). No pre-existing project code.
 - **AI assistance:** Claude (Anthropic) generated the initial implementation, tests and documentation. Codex (OpenAI)
-  assisted with the October 24 grading, answer preservation, resume, validation, tests and documentation improvements.
+  assisted with the October 24 grading, answer preservation and resume features, and the October 30 number-grouping,
+  choice-validation and review-navigation fixes, with tests and documentation for both updates.
 - The 1 minute 3 second video shows the October 22 version. Current resume and validation features are in the live app.
 - Libraries: React, Vite and TypeScript for the teacher's page; Vitest, Testing Library, Playwright and axe-core for
   tests. The packed file uses no libraries.

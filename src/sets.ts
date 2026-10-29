@@ -150,6 +150,9 @@ export function parseSet(source: string): { set: PracticeSet; issues: Issue[] } 
     if (q.options.length) {
       q.kind = 'choice'
       if (q.options.length < 2) report(`Question ${k} has only one option.`)
+      const visibleOptions = q.options.map((o) => o.text.replace(/\s+/g, ' ').trim())
+      if (visibleOptions.some((text) => !text)) report(`Question ${k} has an empty option. Write an answer for every option.`)
+      if (new Set(visibleOptions).size !== visibleOptions.length) report(`Question ${k} has identical options. Give each option different text.`)
       for (const answer of q.answers) {
         const matches = /^[a-h]$/i.test(answer)
           ? [q.options[answer.toLowerCase().charCodeAt(0) - 97]].filter(Boolean)
